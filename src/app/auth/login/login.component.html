@@ -1,0 +1,56 @@
+<section class="login-page">
+  <app-top-bar [compact]="true" />
+  <div class="top-rule"></div>
+
+  <section class="login-content">
+    <div class="brand-panel">
+      <span class="brand-mark">
+        <svg lucideHeartHandshake size="24" aria-hidden="true"></svg>
+      </span>
+      <p>Binance</p>
+      <h1>Finance Better, Together</h1>
+    </div>
+
+    <form class="login-card" (ngSubmit)="signIn()">
+      <label class="field">
+        <span>Username</span>
+        <input name="username" autocomplete="username" placeholder="partner1" [(ngModel)]="username" required>
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <input name="password" type="password" autocomplete="current-password" placeholder="••••••••" [(ngModel)]="password" required>
+      </label>
+
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+
+      <button class="primary-button" type="submit">
+        <svg lucideLogIn size="18" aria-hidden="true"></svg>
+        Sign In
+      </button>
+
+      <p class="secure-note">
+        <svg lucideShieldCheck size="15" aria-hidden="true"></svg>
+        Demo data stays on this device.
+      </p>
+    </form>
+  </section>
+
+  <div class="quick-select">
+    <span></span>
+    <p>quick select</p>
+    <span></span>
+  </div>
+  <div class="quick-accounts">
+    <button type="button" (click)="quickSelect('partner1')">
+      <b>P1</b>
+      <span>Partner 1</span>
+    </button>
+    <button type="button" (click)="quickSelect('partner2')">
+      <b>P2</b>
+      <span>Partner 2</span>
+    </button>
+  </div>
+</section>

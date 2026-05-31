@@ -1,0 +1,181 @@
+:root {
+  color-scheme: light;
+  --page: #f8fafc;
+  --surface: #ffffff;
+  --muted-bg: #f1f5f9;
+  --hero: #1a1a2e;
+  --hero-inner: #242440;
+  --teal-strong: #0f6e56;
+  --teal-mid: #1d9e75;
+  --teal-soft: #5dcaa5;
+  --teal-wash: #e0fdf4;
+  --rose-strong: #be123c;
+  --rose-mid: #f43f5e;
+  --rose-soft: #fb7185;
+  --rose-wash: #fff1f2;
+  --violet-strong: #7c3aed;
+  --violet-wash: #ede9fe;
+  --amber-strong: #d97706;
+  --amber-wash: #fffbeb;
+  --ink: #1a1a2e;
+  --muted: #64748b;
+  --muted-light: #94a3b8;
+  --line: #e2e8f0;
+  --line-light: #f1f5f9;
+  --primary: var(--teal-strong);
+  --primary-dark: var(--teal-strong);
+  --primary-soft: var(--teal-wash);
+  --coral: var(--rose-mid);
+  --danger: var(--rose-strong);
+  --warning: var(--amber-strong);
+  --shadow: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #e9edf2;
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+svg {
+  display: block;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.app-frame {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  margin: 0 auto;
+  background: var(--page);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.logo-mark {
+  display: inline-grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--primary);
+  color: white;
+  font-weight: 800;
+  box-shadow: 0 14px 24px rgba(15, 110, 86, 0.22);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field label {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.field input {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--muted-bg);
+  color: var(--ink);
+  outline: none;
+  padding: 0 14px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field select {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--muted-bg);
+  color: var(--ink);
+  outline: none;
+  padding: 0 14px;
+}
+
+.field input:focus {
+  box-shadow: 0 0 0 4px rgba(15, 110, 86, 0.12);
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  font-weight: 800;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: white;
+  box-shadow: none;
+}
+
+.secondary-button {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--line);
+}
+
+.danger-button {
+  background: #fff3ef;
+  color: #b04a27;
+}
+
+.icon-button {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

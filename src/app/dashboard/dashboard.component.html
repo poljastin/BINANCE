@@ -1,0 +1,290 @@
+@if (user(); as currentUser) {
+  <section class="dashboard">
+    @if (locked()) {
+      <div class="lock-screen">
+        <div class="lock-card">
+          <span class="lock-icon"><svg lucideLock size="24" aria-hidden="true"></svg></span>
+          <h2>Enter PIN</h2>
+          <input
+            name="unlockPin"
+            type="password"
+            inputmode="numeric"
+            maxlength="4"
+            placeholder="4-digit PIN"
+            [(ngModel)]="pinInput"
+            (keyup.enter)="unlock()"
+          >
+          @if (pinError()) {
+            <p class="form-error">{{ pinError() }}</p>
+          }
+          <button class="primary-button" type="button" (click)="unlock()">Unlock</button>
+          <button class="secondary-button" type="button" (click)="forgotPin()">Forgot PIN</button>
+        </div>
+      </div>
+    }
+
+    <app-top-bar
+      title="Ana & Ben"
+      initials="AB"
+      (notifications)="openSheet('threshold')"
+      (settings)="openSheet('settings')"
+    />
+
+    @if (lowBalanceVisible()) {
+      <section class="alert-banner">
+        <svg lucideBell size="18" aria-hidden="true"></svg>
+        <span>Your shared balance is running low.</span>
+        <button type="button" (click)="dismissLowBalance()">Dismiss</button>
+      </section>
+    }
+
+    @if (pendingRecurring()) {
+      <section class="pending-badge">
+        <svg lucideCalendarSync size="16" aria-hidden="true"></svg>
+        {{ pendingRecurring() }} recurring transaction logged
+      </section>
+    }
+
+    <app-balance-card
+      [balance]="totalBalance()"
+      [lastUpdated]="lastUpdated()"
+      [partner1Contribution]="myContribution()"
+      [partner2Contribution]="partnerContribution()"
+      [partner1Initials]="currentUser.initials"
+      [partner2Initials]="partner()?.initials || 'P2'"
+    />
+
+    <app-quick-actions (action)="handleQuickAction($event)" />
+
+    <section class="goals-section">
+      <div class="section-heading">
+        <h2>Savings goals</h2>
+        <button type="button" (click)="openSheet('goal')">See all →</button>
+      </div>
+      @if (goals().length) {
+        <div class="goal-scroll">
+          @for (goal of goals(); track goal.id) {
+            <app-goal-card [goal]="goal" [balance]="totalBalance()" />
+          }
+        </div>
+      } @else {
+        <button class="empty-goal" type="button" (click)="openSheet('goal')">
+          <svg lucideTarget size="18" aria-hidden="true"></svg>
+          Create your first savings goal
+        </button>
+      }
+    </section>
+
+    <section class="month-section">
+      <div class="section-heading">
+        <h2>This month</h2>
+      </div>
+      <app-monthly-snapshot [summary]="monthlySummary()" (expand)="openSheet('monthly')" />
+    </section>
+
+    <section class="utility-row">
+      <button class="feature-button" type="button" (click)="openSheet('recurring')">
+        <svg lucideCalendarSync size="17" aria-hidden="true"></svg>
+        Recurring
+      </button>
+      <button class="feature-button" type="button" (click)="openSheet('threshold')">
+        <svg lucideBell size="17" aria-hidden="true"></svg>
+        Alert
+      </button>
+      <button class="feature-button" type="button" (click)="openSheet('split')">
+        <svg lucideChartNoAxesColumn size="17" aria-hidden="true"></svg>
+        Split
+      </button>
+    </section>
+
+    <section class="insight-card compact-extra" (click)="openSheet('split')" role="button" tabindex="0">
+      <div class="section-heading">
+        <h2>
+          <svg lucideChartNoAxesColumn size="18" aria-hidden="true"></svg>
+          Contribution Split
+        </h2>
+        <span>Tap details</span>
+      </div>
+      <div class="split-bar">
+        <span class="split-one" [style.width.%]="splitPartner1()"></span>
+        <span class="split-two" [style.width.%]="splitPartner2()"></span>
+      </div>
+      <div class="split-labels">
+        <span>Partner 1 {{ splitPartner1() }}%</span>
+        <span>Partner 2 {{ splitPartner2() }}%</span>
+      </div>
+    </section>
+
+    <section class="category-card compact-extra">
+      <div class="section-heading">
+        <h2>
+          <svg lucideChartPie size="18" aria-hidden="true"></svg>
+          Categories
+        </h2>
+      </div>
+      @if (categoryBreakdown().length) {
+        <div class="category-bars">
+          @for (item of categoryBreakdown(); track item.category) {
+            <div class="category-row">
+              <span>{{ categoryLabel(item.category) }}</span>
+              <div><i [style.width.%]="item.percentage"></i></div>
+              <strong>{{ item.percentage }}%</strong>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="muted">No category data yet.</p>
+      }
+    </section>
+
+    <app-transaction-list
+      [transactions]="filteredTransactions()"
+      [totalTransactions]="transactions().length"
+      [searchTerm]="searchTerm()"
+      [selectedCategory]="selectedCategory()"
+      (searchTermChange)="searchTerm.set($event)"
+      (selectedCategoryChange)="selectedCategory.set($event)"
+      (exportCsv)="exportCsv()"
+    />
+
+    <app-bottom-nav (navigate)="handleBottomNav($event)" />
+  </section>
+
+  <app-bottom-sheet
+    [open]="activeSheet() !== null"
+    [title]="sheetTitle()"
+    (close)="closeSheet()"
+  >
+    @if (activeSheet() === 'deposit' || activeSheet() === 'withdrawal') {
+      <app-add-transaction-sheet
+        [mode]="activeSheet() === 'deposit' ? 'deposit' : 'withdrawal'"
+        [categories]="categories"
+        [categoryLabel]="categoryLabel"
+        [error]="formError()"
+        [warning]="false"
+        (confirmTransaction)="submitTransaction($event)"
+      />
+    }
+
+    @if (activeSheet() === 'goal') {
+      <form class="sheet-form" (ngSubmit)="submitGoal()">
+        <p class="muted">{{ activeGoals().length }}/5 active goals</p>
+        <label class="field"><span>Name</span><input name="goalName" placeholder="Vacation fund" [(ngModel)]="goalName"></label>
+        <label class="field"><span>Target Amount</span><input name="goalTarget" type="number" min="1" inputmode="decimal" [(ngModel)]="goalTarget"></label>
+        <label class="field"><span>Emoji</span><input name="goalEmoji" maxlength="2" placeholder="🏖️" [(ngModel)]="goalEmoji"></label>
+        <label class="field"><span>Deadline</span><input name="goalDeadline" type="date" [(ngModel)]="goalDeadline"></label>
+        @if (formError()) { <p class="form-error">{{ formError() }}</p> }
+        <button class="primary-button" type="submit"><svg lucideTarget size="18" aria-hidden="true"></svg>Create Goal</button>
+      </form>
+    }
+
+    @if (activeSheet() === 'recurring') {
+      <form class="sheet-form" (ngSubmit)="submitRecurring()">
+        <label class="field"><span>Label</span><input name="recurringLabel" placeholder="Salary" [(ngModel)]="recurringLabel"></label>
+        <label class="field"><span>Amount</span><input name="recurringAmount" type="number" min="1" inputmode="decimal" [(ngModel)]="recurringAmount"></label>
+        <div class="two-fields">
+          <label class="field"><span>Type</span><select name="recurringType" [(ngModel)]="recurringType"><option value="deposit">Deposit</option><option value="withdrawal">Withdrawal</option></select></label>
+          <label class="field"><span>Category</span><select name="recurringCategory" [(ngModel)]="recurringCategory">@for (option of categories; track option) { <option [value]="option">{{ categoryLabel(option) }}</option> }</select></label>
+        </div>
+        <div class="two-fields">
+          <label class="field"><span>Frequency</span><select name="recurringFrequency" [(ngModel)]="recurringFrequency"><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></label>
+          @if (recurringFrequency === 'monthly') {
+            <label class="field"><span>Day</span><input name="dayOfMonth" type="number" min="1" max="28" [(ngModel)]="recurringDayOfMonth"></label>
+          } @else {
+            <label class="field"><span>Weekday</span><select name="dayOfWeek" [(ngModel)]="recurringDayOfWeek"><option [value]="0">Sun</option><option [value]="1">Mon</option><option [value]="2">Tue</option><option [value]="3">Wed</option><option [value]="4">Thu</option><option [value]="5">Fri</option><option [value]="6">Sat</option></select></label>
+          }
+        </div>
+        @if (formError()) { <p class="form-error">{{ formError() }}</p> }
+        <button class="primary-button" type="submit"><svg lucideCalendarSync size="18" aria-hidden="true"></svg>Add Rule</button>
+        <div class="rule-list">
+          @for (rule of recurringRules(); track rule.id) {
+            <article>
+              <span>{{ rule.label }} · {{ rule.frequency }} · {{ rule.amount | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}</span>
+              <button class="icon-button" type="button" (click)="deleteRecurring(rule.id)" aria-label="Delete recurring rule"><svg lucideTrash2 size="16" aria-hidden="true"></svg></button>
+            </article>
+          }
+        </div>
+      </form>
+    }
+
+    @if (activeSheet() === 'threshold') {
+      <form class="sheet-form" (ngSubmit)="saveThreshold()">
+        <label class="field"><span>Low Balance Threshold</span><input name="threshold" type="number" min="0" inputmode="decimal" placeholder="1000" [(ngModel)]="threshold"></label>
+        <button class="primary-button" type="submit"><svg lucideBell size="18" aria-hidden="true"></svg>Save Alert</button>
+      </form>
+    }
+
+    @if (activeSheet() === 'split') {
+      <div class="sheet-details">
+        <p>Partner 1 deposited {{ partner1DepositTotal() | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }} and withdrew {{ financeService.totalWithdrawnBy('partner1') | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}.</p>
+        <p>Partner 2 deposited {{ partner2DepositTotal() | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }} and withdrew {{ financeService.totalWithdrawnBy('partner2') | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}.</p>
+      </div>
+    }
+
+    @if (activeSheet() === 'monthly') {
+      <div class="sheet-details">
+        <p>Total saved this month: <strong>{{ monthlySummary().saved | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}</strong></p>
+        <p>Total withdrawn this month: <strong>{{ monthlySummary().withdrawn | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}</strong></p>
+        <p>Net change vs last month: <strong>{{ monthlySummary().netChange >= 0 ? '▲' : '▼' }} {{ monthlySummary().netChangePercent }}%</strong></p>
+      </div>
+    }
+
+    @if (activeSheet() === 'pin') {
+      <form class="sheet-form" (ngSubmit)="setPin()">
+        <p class="muted">{{ hasPin() ? 'PIN is active for this session.' : 'Set an optional 4-digit PIN for app resume.' }}</p>
+        <label class="field"><span>4-digit PIN</span><input name="pinSetup" type="password" inputmode="numeric" maxlength="4" [(ngModel)]="pinSetup"></label>
+        @if (pinError()) { <p class="form-error">{{ pinError() }}</p> }
+        <button class="primary-button" type="submit"><svg lucideLock size="18" aria-hidden="true"></svg>Set PIN</button>
+      </form>
+    }
+
+    @if (activeSheet() === 'settings') {
+      <div class="settings-list">
+        <button type="button" (click)="openSheet('pin')">
+          <span><svg lucideLock size="18" aria-hidden="true"></svg></span>
+          <strong>PIN Lock</strong>
+          <small>{{ hasPin() ? 'Update session PIN' : 'Protect app resume' }}</small>
+        </button>
+        <button type="button" (click)="openSheet('threshold')">
+          <span><svg lucideBell size="18" aria-hidden="true"></svg></span>
+          <strong>Low Balance Alert</strong>
+          <small>{{ lowBalanceThreshold() ? 'Threshold set' : 'Set warning amount' }}</small>
+        </button>
+        <button type="button" (click)="openSheet('recurring')">
+          <span><svg lucideCalendarSync size="18" aria-hidden="true"></svg></span>
+          <strong>Recurring Transactions</strong>
+          <small>{{ recurringRules().length }} active rule{{ recurringRules().length === 1 ? '' : 's' }}</small>
+        </button>
+        <button type="button" (click)="openSheet('split')">
+          <span><svg lucideChartNoAxesColumn size="18" aria-hidden="true"></svg></span>
+          <strong>Contribution Split</strong>
+          <small>View partner totals</small>
+        </button>
+        <button type="button" (click)="openSheet('monthly')">
+          <span><svg lucideChartPie size="18" aria-hidden="true"></svg></span>
+          <strong>Monthly Summary</strong>
+          <small>Saved, withdrawn, net change</small>
+        </button>
+        <button type="button" (click)="exportCsv()">
+          <span><svg lucideDownload size="18" aria-hidden="true"></svg></span>
+          <strong>Export CSV</strong>
+          <small>Download transaction history</small>
+        </button>
+        <button class="logout-action" type="button" (click)="logout()">
+          <span><svg lucideLogOut size="18" aria-hidden="true"></svg></span>
+          <strong>Log Out</strong>
+          <small>Return to sign in</small>
+        </button>
+      </div>
+    }
+
+    @if (activeSheet() === 'celebration') {
+      <div class="celebration">
+        <span><svg lucidePartyPopper size="34" aria-hidden="true"></svg></span>
+        <h3>You reached your goal! 🎉</h3>
+        <p>{{ celebrationGoalName() }}</p>
+        <button class="primary-button" type="button" (click)="closeSheet()">Keep Saving</button>
+      </div>
+    }
+  </app-bottom-sheet>
+}
