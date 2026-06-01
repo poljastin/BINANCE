@@ -15,6 +15,7 @@ const TRANSACTIONS_KEY = 'binance_transactions';
 const GOALS_KEY = 'binance_goals';
 const RECURRING_KEY = 'binance_recurring_rules';
 const LOW_BALANCE_KEY = 'binance_low_balance_threshold';
+const CLOUD_REFRESH_INTERVAL_MS = 3000;
 
 export interface CategoryBreakdown {
   category: Category;
@@ -34,9 +35,10 @@ export class FinanceService {
   private readonly state = signal<AppState>(this.readState());
   private readonly pendingRecurringCount = signal(0);
   private databaseHydrated = false;
+  private cloudRefreshTimerId = 0;
   private readonly refreshFromDatabase = () => {
     if (document.visibilityState !== 'hidden') {
-      void this.hydrateFromDatabase();
+      void this.refreshSharedState();
     }
   };
 
@@ -111,6 +113,10 @@ export class FinanceService {
     void this.hydrateFromDatabase();
     window.addEventListener('focus', this.refreshFromDatabase);
     document.addEventListener('visibilitychange', this.refreshFromDatabase);
+    this.cloudRefreshTimerId = window.setInterval(
+      this.refreshFromDatabase,
+      CLOUD_REFRESH_INTERVAL_MS,
+    );
 
     effect(() => {
       const state = this.state();
@@ -382,12 +388,24 @@ export class FinanceService {
     const storedState = await this.database.getFinanceState();
 
     if (storedState) {
-      this.state.set(this.mergeStates(this.normalizeState(storedState), this.state()));
+      this.setMergedState(this.normalizeState(storedState));
     }
 
     this.databaseHydrated = true;
     this.generateDueRecurringTransactions();
     await this.database.saveFinanceState(this.state());
+  }
+
+  private async refreshSharedState(): Promise<void> {
+    if (!this.databaseHydrated) {
+      return;
+    }
+
+    const storedState = await this.database.getFinanceState();
+
+    if (storedState) {
+      this.setMergedState(this.normalizeState(storedState));
+    }
   }
 
   private readState(): AppState {
@@ -424,6 +442,23 @@ export class FinanceService {
       recurringRules: local.recurringRules.length ? local.recurringRules : remote.recurringRules,
       lowBalanceThreshold: local.lowBalanceThreshold ?? remote.lowBalanceThreshold,
     };
+  }
+
+  private setMergedState(remoteState: AppState): void {
+    const mergedState = this.mergeStates(remoteState, this.state());
+
+    if (this.serializeState(mergedState) !== this.serializeState(this.state())) {
+      this.state.set(mergedState);
+    }
+  }
+
+  private serializeState(state: AppState): string {
+    return JSON.stringify({
+      transactions: [...state.transactions].sort((first, second) => first.id.localeCompare(second.id)),
+      goals: [...state.goals].sort((first, second) => first.id.localeCompare(second.id)),
+      recurringRules: [...state.recurringRules].sort((first, second) => first.id.localeCompare(second.id)),
+      lowBalanceThreshold: state.lowBalanceThreshold,
+    });
   }
 
   private mergeById<T extends Transaction | Goal>(remoteItems: T[], localItems: T[]): T[] {
