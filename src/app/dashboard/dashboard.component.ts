@@ -30,7 +30,7 @@ import { FinanceService } from '../shared/services/finance.service';
 import { PinLockService } from '../shared/services/pin-lock.service';
 
 type ActionMode = 'deposit' | 'withdrawal';
-type SheetMode = ActionMode | 'goal' | 'recurring' | 'threshold' | 'split' | 'monthly' | 'pin' | 'settings' | 'celebration';
+type SheetMode = ActionMode | 'goal' | 'recurring' | 'threshold' | 'split' | 'monthly' | 'pin' | 'settings' | 'reset' | 'celebration';
 type CategoryFilter = Category | 'all';
 
 const CATEGORY_LABELS: Record<Category, string> = {
@@ -117,6 +117,10 @@ export class DashboardComponent {
   threshold: number | null = null;
   pinSetup = '';
   pinInput = '';
+  resetPaulPassword = '';
+  resetJemimahPassword = '';
+  resetConfirmText = '';
+  resetSubmitting = false;
 
   readonly partner = computed(() => {
     const user = this.user();
@@ -176,6 +180,7 @@ export class DashboardComponent {
       monthly: 'Monthly Summary',
       pin: 'PIN Lock',
       settings: 'Settings',
+      reset: 'Reset Binance',
       celebration: 'Goal Reached',
     };
 
@@ -202,6 +207,12 @@ export class DashboardComponent {
 
     if (sheet === 'threshold') {
       this.threshold = this.lowBalanceThreshold();
+    }
+
+    if (sheet === 'reset') {
+      this.resetPaulPassword = '';
+      this.resetJemimahPassword = '';
+      this.resetConfirmText = '';
     }
   }
 
@@ -379,6 +390,28 @@ export class DashboardComponent {
 
   exportCsv(): void {
     this.financeService.exportCsv();
+  }
+
+  async submitResetBinance(): Promise<void> {
+    this.formError.set('');
+
+    if (this.resetConfirmText.trim().toUpperCase() !== 'RESET BINANCE') {
+      this.formError.set('Type RESET BINANCE to confirm.');
+      return;
+    }
+
+    if (!this.authService.verifyPartnerPasswords(this.resetPaulPassword, this.resetJemimahPassword)) {
+      this.formError.set('Both partner passwords are required.');
+      return;
+    }
+
+    this.resetSubmitting = true;
+    await this.financeService.resetBinance();
+    this.resetSubmitting = false;
+    this.resetPaulPassword = '';
+    this.resetJemimahPassword = '';
+    this.resetConfirmText = '';
+    this.closeSheet();
   }
 
   zeroBalanceWarning(): boolean {

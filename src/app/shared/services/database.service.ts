@@ -42,6 +42,11 @@ export class DatabaseService {
     await this.saveCloudFinanceState(state);
   }
 
+  async resetFinanceState(state: AppState): Promise<void> {
+    await this.saveLocalFinanceState(state);
+    await this.overwriteCloudFinanceState(state);
+  }
+
   async getLocalFinanceState(): Promise<AppState | null> {
     return this.get<AppState>(STATE_KEY);
   }
@@ -100,6 +105,29 @@ export class DatabaseService {
     }
   }
 
+  async overwriteCloudFinanceState(state: AppState): Promise<void> {
+    if (!this.cloudConfigured()) {
+      return;
+    }
+
+    try {
+      await fetch(`${this.supabaseUrl}/rest/v1/binance_app_state?on_conflict=id`, {
+        method: 'POST',
+        headers: {
+          ...this.cloudHeaders(),
+          Prefer: 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({
+          id: this.sharedStateId,
+          state,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+    } catch {
+      return;
+    }
+  }
+
   private cloudConfigured(): boolean {
     return Boolean(this.supabaseUrl && this.supabaseAnonKey && this.sharedStateId);
   }
@@ -113,12 +141,29 @@ export class DatabaseService {
   }
 
   private mergeStates(remote: AppState, local: AppState): AppState {
+    if (this.isNewerReset(local.resetAt, remote.resetAt)) {
+      return local;
+    }
+
+    if (this.isNewerReset(remote.resetAt, local.resetAt)) {
+      return remote;
+    }
+
     return {
       transactions: this.mergeById(remote.transactions, local.transactions),
       goals: this.mergeById(remote.goals, local.goals),
       recurringRules: this.mergeById(remote.recurringRules, local.recurringRules),
       lowBalanceThreshold: local.lowBalanceThreshold ?? remote.lowBalanceThreshold,
+      resetAt: local.resetAt ?? remote.resetAt,
     };
+  }
+
+  private isNewerReset(candidate?: string, baseline?: string): boolean {
+    if (!candidate) {
+      return false;
+    }
+
+    return new Date(candidate).getTime() > (baseline ? new Date(baseline).getTime() : 0);
   }
 
   private mergeById<T extends Transaction | Goal | RecurringRule>(remoteItems: T[], localItems: T[]): T[] {

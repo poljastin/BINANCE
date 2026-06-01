@@ -17,6 +17,14 @@ const RECURRING_KEY = 'binance_recurring_rules';
 const LOW_BALANCE_KEY = 'binance_low_balance_threshold';
 const CLOUD_REFRESH_INTERVAL_MS = 3000;
 
+const emptyState = (resetAt?: string): AppState => ({
+  transactions: [],
+  goals: [],
+  recurringRules: [],
+  lowBalanceThreshold: null,
+  resetAt,
+});
+
 export interface CategoryBreakdown {
   category: Category;
   total: number;
@@ -120,10 +128,7 @@ export class FinanceService {
 
     effect(() => {
       const state = this.state();
-      localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(state.transactions));
-      localStorage.setItem(GOALS_KEY, JSON.stringify(state.goals));
-      localStorage.setItem(RECURRING_KEY, JSON.stringify(state.recurringRules));
-      localStorage.setItem(LOW_BALANCE_KEY, JSON.stringify(state.lowBalanceThreshold));
+      this.writeLocalStorage(state);
 
       if (this.databaseHydrated) {
         void this.database.saveFinanceState(state);
@@ -246,6 +251,16 @@ export class FinanceService {
     link.download = `binance-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  async resetBinance(): Promise<void> {
+    const resetState = emptyState(new Date().toISOString());
+
+    this.pendingRecurringCount.set(0);
+    this.state.set(resetState);
+    this.writeLocalStorage(resetState);
+    sessionStorage.removeItem('binance_low_balance_dismissed');
+    await this.database.resetFinanceState(resetState);
   }
 
   private addTransaction(transaction: Transaction): Goal[] {
@@ -438,15 +453,25 @@ export class FinanceService {
       goals: state.goals ?? [],
       recurringRules: state.recurringRules ?? [],
       lowBalanceThreshold: state.lowBalanceThreshold ?? null,
+      resetAt: state.resetAt,
     };
   }
 
   private mergeStates(remote: AppState, local: AppState): AppState {
+    if (this.isNewerReset(local.resetAt, remote.resetAt)) {
+      return local;
+    }
+
+    if (this.isNewerReset(remote.resetAt, local.resetAt)) {
+      return remote;
+    }
+
     return {
       transactions: this.mergeById(remote.transactions, local.transactions),
       goals: this.mergeById(remote.goals, local.goals),
       recurringRules: local.recurringRules.length ? local.recurringRules : remote.recurringRules,
       lowBalanceThreshold: local.lowBalanceThreshold ?? remote.lowBalanceThreshold,
+      resetAt: local.resetAt ?? remote.resetAt,
     };
   }
 
@@ -464,7 +489,23 @@ export class FinanceService {
       goals: [...state.goals].sort((first, second) => first.id.localeCompare(second.id)),
       recurringRules: [...state.recurringRules].sort((first, second) => first.id.localeCompare(second.id)),
       lowBalanceThreshold: state.lowBalanceThreshold,
+      resetAt: state.resetAt,
     });
+  }
+
+  private writeLocalStorage(state: AppState): void {
+    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(state.transactions));
+    localStorage.setItem(GOALS_KEY, JSON.stringify(state.goals));
+    localStorage.setItem(RECURRING_KEY, JSON.stringify(state.recurringRules));
+    localStorage.setItem(LOW_BALANCE_KEY, JSON.stringify(state.lowBalanceThreshold));
+  }
+
+  private isNewerReset(candidate?: string, baseline?: string): boolean {
+    if (!candidate) {
+      return false;
+    }
+
+    return new Date(candidate).getTime() > (baseline ? new Date(baseline).getTime() : 0);
   }
 
   private mergeById<T extends Transaction | Goal>(remoteItems: T[], localItems: T[]): T[] {

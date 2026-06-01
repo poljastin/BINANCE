@@ -238,6 +238,26 @@
       </form>
     }
 
+    @if (activeSheet() === 'reset') {
+      <form class="sheet-form reset-form" (ngSubmit)="submitResetBinance()">
+        <div class="reset-warning">
+          <span><svg lucideTrash2 size="20" aria-hidden="true"></svg></span>
+          <div>
+            <strong>This clears everything.</strong>
+            <p>Transactions, goals, recurring rules, alerts, and shared balances will be deleted for both accounts on every device.</p>
+          </div>
+        </div>
+        <label class="field"><span>Paul's password</span><input name="resetPaulPassword" type="password" autocomplete="off" [(ngModel)]="resetPaulPassword"></label>
+        <label class="field"><span>Jemimah's password</span><input name="resetJemimahPassword" type="password" autocomplete="off" [(ngModel)]="resetJemimahPassword"></label>
+        <label class="field"><span>Type RESET BINANCE</span><input name="resetConfirmText" autocomplete="off" placeholder="RESET BINANCE" [(ngModel)]="resetConfirmText"></label>
+        @if (formError()) { <p class="form-error">{{ formError() }}</p> }
+        <button class="danger-button" type="submit" [disabled]="resetSubmitting">
+          <svg lucideTrash2 size="18" aria-hidden="true"></svg>
+          {{ resetSubmitting ? 'Resetting...' : 'Reset Binance' }}
+        </button>
+      </form>
+    }
+
     @if (activeSheet() === 'settings') {
       <div class="settings-list">
         <button type="button" (click)="openSheet('pin')">
@@ -269,6 +289,11 @@
           <span><svg lucideDownload size="18" aria-hidden="true"></svg></span>
           <strong>Export CSV</strong>
           <small>Download transaction history</small>
+        </button>
+        <button class="reset-action" type="button" (click)="openSheet('reset')">
+          <span><svg lucideTrash2 size="18" aria-hidden="true"></svg></span>
+          <strong>Reset Binance</strong>
+          <small>Clear all shared data</small>
         </button>
         <button class="logout-action" type="button" (click)="logout()">
           <span><svg lucideLogOut size="18" aria-hidden="true"></svg></span>

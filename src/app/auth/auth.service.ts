@@ -56,6 +56,11 @@ export class AuthService {
     return true;
   }
 
+  verifyPartnerPasswords(partner1Password: string, partner2Password: string): boolean {
+    return this.accountFor('partner1').password === partner1Password
+      && this.accountFor('partner2').password === partner2Password;
+  }
+
   logout(): void {
     sessionStorage.removeItem(SESSION_KEY);
     this.currentUserId.set(null);

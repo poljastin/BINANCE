@@ -53,4 +53,5 @@ export interface AppState {
   goals: Goal[];
   recurringRules: RecurringRule[];
   lowBalanceThreshold: number | null;
+  resetAt?: string;
 }
