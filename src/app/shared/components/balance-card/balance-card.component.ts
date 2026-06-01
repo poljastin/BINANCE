@@ -24,7 +24,7 @@ import { LucideWalletCards } from '@lucide/angular';
       </p>
       <div class="partner-pills">
         <span><i></i><b>Paul</b><strong>{{ partner1Contribution | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}</strong></span>
-        <span class="partner-two"><i></i><b>Mai</b><strong>{{ partner2Contribution | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}</strong></span>
+        <span class="partner-two"><i></i><b>Jemimah</b><strong>{{ partner2Contribution | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}</strong></span>
       </div>
     </section>
   `,

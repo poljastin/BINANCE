@@ -24,8 +24,8 @@ export const ACCOUNTS: Account[] = [
     id: 'partner2',
     username: 'partner2',
     password: 'binance2',
-    displayName: 'Mai',
-    initials: 'M',
+    displayName: 'Jemimah',
+    initials: 'J',
   },
 ];
 

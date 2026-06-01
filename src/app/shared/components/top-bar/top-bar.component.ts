@@ -190,8 +190,8 @@ interface NavigatorWithConnection extends Navigator {
   `,
 })
 export class TopBarComponent {
-  @Input() title = 'Paul & Mai';
-  @Input() initials = 'AB';
+  @Input() title = 'Paul & Jemimah';
+  @Input() initials = 'PJ';
   @Input() compact = false;
   @Output() notifications = new EventEmitter<void>();
   @Output() settings = new EventEmitter<void>();

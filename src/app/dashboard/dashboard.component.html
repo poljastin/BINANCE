@@ -24,8 +24,8 @@
     }
 
     <app-top-bar
-      title="Paul & Mai"
-      initials="PM"
+      title="Paul & Jemimah"
+      initials="PJ"
       (notifications)="openSheet('threshold')"
       (settings)="openSheet('settings')"
     />
@@ -48,10 +48,10 @@
     <app-balance-card
       [balance]="totalBalance()"
       [lastUpdated]="lastUpdated()"
-      [partner1Contribution]="myContribution()"
-      [partner2Contribution]="partnerContribution()"
-      [partner1Initials]="currentUser.initials"
-      [partner2Initials]="partner()?.initials || 'M'"
+      [partner1Contribution]="financeService.partner1Balance()"
+      [partner2Contribution]="financeService.partner2Balance()"
+      [partner1Initials]="'P'"
+      [partner2Initials]="'J'"
     />
 
     <app-quick-actions (action)="handleQuickAction($event)" />
@@ -111,7 +111,7 @@
       </div>
       <div class="split-labels">
         <span>Paul {{ splitPartner1() }}%</span>
-        <span>Mai {{ splitPartner2() }}%</span>
+        <span>Jemimah {{ splitPartner2() }}%</span>
       </div>
     </section>
 
@@ -217,7 +217,7 @@
     @if (activeSheet() === 'split') {
       <div class="sheet-details">
         <p>Paul deposited {{ partner1DepositTotal() | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }} and withdrew {{ financeService.totalWithdrawnBy('partner1') | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}.</p>
-        <p>Mai deposited {{ partner2DepositTotal() | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }} and withdrew {{ financeService.totalWithdrawnBy('partner2') | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}.</p>
+        <p>Jemimah deposited {{ partner2DepositTotal() | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }} and withdrew {{ financeService.totalWithdrawnBy('partner2') | currency: 'PHP' : 'symbol-narrow' : '1.2-2' }}.</p>
       </div>
     }
 
