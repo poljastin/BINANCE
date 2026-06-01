@@ -50,7 +50,11 @@ interface NavigatorWithConnection extends Navigator {
               <i aria-hidden="true"></i>
             </button>
             <button class="avatar" type="button" (click)="settings.emit()" aria-label="Settings">
-              {{ initials }}
+              <svg class="partnership-mark" viewBox="0 0 32 32" aria-hidden="true">
+                <circle class="ring ring-one" cx="12.4" cy="16" r="6.4" />
+                <circle class="ring ring-two" cx="19.6" cy="16" r="6.4" />
+                <path class="bridge" d="M13.7 16H18.3" />
+              </svg>
             </button>
           </div>
         </div>
@@ -154,16 +158,39 @@ interface NavigatorWithConnection extends Navigator {
     }
 
     .avatar {
+      display: grid;
+      place-items: center;
       border: 1px solid var(--teal-soft);
       background: var(--teal-wash);
       color: var(--teal-strong);
-      font-size: 0.88rem;
-      font-weight: 900;
+    }
+
+    .partnership-mark {
+      width: 25px;
+      height: 25px;
+      filter: drop-shadow(0 3px 8px rgba(15, 110, 86, 0.14));
+    }
+
+    .ring,
+    .bridge {
+      fill: none;
+      stroke: currentColor;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 2.5;
+    }
+
+    .ring-two {
+      opacity: 0.72;
+    }
+
+    .bridge {
+      stroke-width: 3;
     }
   `,
 })
 export class TopBarComponent {
-  @Input() title = 'Ana & Ben';
+  @Input() title = 'Paul & Mai';
   @Input() initials = 'AB';
   @Input() compact = false;
   @Output() notifications = new EventEmitter<void>();

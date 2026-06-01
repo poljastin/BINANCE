@@ -8,6 +8,7 @@ import {
   TransactionType,
   UserId,
 } from '../models/transaction.model';
+import { DatabaseService } from './database.service';
 
 const LEGACY_STORAGE_KEY = 'binance.financeState';
 const TRANSACTIONS_KEY = 'binance_transactions';
@@ -32,6 +33,7 @@ export interface MonthlySummary {
 export class FinanceService {
   private readonly state = signal<AppState>(this.readState());
   private readonly pendingRecurringCount = signal(0);
+  private databaseHydrated = false;
 
   readonly transactions = computed(() =>
     [...this.state().transactions].sort(
@@ -100,8 +102,8 @@ export class FinanceService {
     };
   });
 
-  constructor() {
-    this.generateDueRecurringTransactions();
+  constructor(private readonly database: DatabaseService) {
+    void this.hydrateFromDatabase();
 
     effect(() => {
       const state = this.state();
@@ -109,6 +111,10 @@ export class FinanceService {
       localStorage.setItem(GOALS_KEY, JSON.stringify(state.goals));
       localStorage.setItem(RECURRING_KEY, JSON.stringify(state.recurringRules));
       localStorage.setItem(LOW_BALANCE_KEY, JSON.stringify(state.lowBalanceThreshold));
+
+      if (this.databaseHydrated) {
+        void this.database.saveFinanceState(state);
+      }
     });
   }
 
@@ -365,21 +371,42 @@ export class FinanceService {
     return trimmed ? trimmed : undefined;
   }
 
+  private async hydrateFromDatabase(): Promise<void> {
+    const storedState = await this.database.getFinanceState();
+
+    if (storedState) {
+      this.state.set(this.normalizeState(storedState));
+    }
+
+    this.databaseHydrated = true;
+    this.generateDueRecurringTransactions();
+    await this.database.saveFinanceState(this.state());
+  }
+
   private readState(): AppState {
     const legacy = this.readJson<Partial<AppState>>(LEGACY_STORAGE_KEY, {});
     const transactions = this.readJson<Transaction[]>(TRANSACTIONS_KEY, legacy.transactions ?? []);
 
-    return {
-      transactions: transactions.map((transaction) => ({
-        ...transaction,
-        category: transaction.category ?? 'savings',
-      })),
+    return this.normalizeState({
+      transactions,
       goals: this.readJson<Goal[]>(GOALS_KEY, legacy.goals ?? []),
       recurringRules: this.readJson<RecurringRule[]>(RECURRING_KEY, legacy.recurringRules ?? []),
       lowBalanceThreshold: this.readJson<number | null>(
         LOW_BALANCE_KEY,
         legacy.lowBalanceThreshold ?? null,
       ),
+    });
+  }
+
+  private normalizeState(state: Partial<AppState>): AppState {
+    return {
+      transactions: (state.transactions ?? []).map((transaction) => ({
+        ...transaction,
+        category: transaction.category ?? 'savings',
+      })),
+      goals: state.goals ?? [],
+      recurringRules: state.recurringRules ?? [],
+      lowBalanceThreshold: state.lowBalanceThreshold ?? null,
     };
   }
 

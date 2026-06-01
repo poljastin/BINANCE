@@ -17,15 +17,15 @@ export const ACCOUNTS: Account[] = [
     id: 'partner1',
     username: 'partner1',
     password: 'binance1',
-    displayName: 'Partner 1',
-    initials: 'P1',
+    displayName: 'Paul',
+    initials: 'P',
   },
   {
     id: 'partner2',
     username: 'partner2',
     password: 'binance2',
-    displayName: 'Partner 2',
-    initials: 'P2',
+    displayName: 'Mai',
+    initials: 'M',
   },
 ];
 

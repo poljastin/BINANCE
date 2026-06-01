@@ -23,20 +23,47 @@ import { LucideWalletCards } from '@lucide/angular';
         }
       </p>
       <div class="partner-pills">
-        <span><i></i><b>Ana</b><strong>{{ partner1Contribution | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}</strong></span>
-        <span class="partner-two"><i></i><b>Ben</b><strong>{{ partner2Contribution | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}</strong></span>
+        <span><i></i><b>Paul</b><strong>{{ partner1Contribution | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}</strong></span>
+        <span class="partner-two"><i></i><b>Mai</b><strong>{{ partner2Contribution | currency: 'PHP' : 'symbol-narrow' : '1.0-0' }}</strong></span>
       </div>
     </section>
   `,
   styles: `
     .balance-card {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
       display: grid;
       gap: 16px;
       border-radius: 20px;
-      background: var(--hero);
+      background:
+        radial-gradient(circle at 15% 10%, rgba(88, 214, 171, 0.16), transparent 34%),
+        radial-gradient(circle at 85% 80%, rgba(124, 58, 237, 0.12), transparent 32%),
+        linear-gradient(135deg, #18172d 0%, #1d1b34 48%, #12172a 100%);
+      background-size: 160% 160%, 150% 150%, 100% 100%;
       color: white;
       padding: 20px 20px 22px;
-      animation: card-in 200ms ease-out both;
+      animation: card-in 200ms ease-out both, gradient-drift 10s ease-in-out infinite alternate;
+    }
+
+    .balance-card::before {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.045) 42%, transparent 68%);
+      content: '';
+      transform: translateX(-35%);
+      animation: light-sweep 9s ease-in-out infinite;
+    }
+
+    .balance-card::after {
+      position: absolute;
+      inset: 1px;
+      z-index: -1;
+      border-radius: inherit;
+      background: rgba(18, 18, 34, 0.34);
+      content: '';
     }
 
     .card-top {
@@ -127,6 +154,17 @@ import { LucideWalletCards } from '@lucide/angular';
       to { background-position: 80px 0; }
     }
 
+    @keyframes gradient-drift {
+      from { background-position: 0% 30%, 100% 70%, center; }
+      to { background-position: 100% 65%, 0% 35%, center; }
+    }
+
+    @keyframes light-sweep {
+      0%, 35% { transform: translateX(-45%); opacity: 0; }
+      55% { opacity: 1; }
+      100% { transform: translateX(45%); opacity: 0; }
+    }
+
     @keyframes card-in {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
@@ -134,6 +172,7 @@ import { LucideWalletCards } from '@lucide/angular';
 
     @media (prefers-reduced-motion: reduce) {
       .balance-card,
+      .balance-card::before,
       .shimmer {
         animation: none;
       }

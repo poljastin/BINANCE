@@ -115,8 +115,14 @@ const CATEGORY_LABELS: Record<Category, string> = {
           <p>No results</p>
         </div>
       } @else {
-        <div class="empty-state">
-          <p>No transactions yet. Start saving together! 💚</p>
+        <div class="empty-state empty-state--fresh">
+          <span class="empty-icon" aria-hidden="true">
+            <svg lucideHistory size="22"></svg>
+          </span>
+          <div>
+            <p>No transactions yet</p>
+            <small>Add savings or withdrawals to start building your shared history.</small>
+          </div>
         </div>
       }
     </section>
