@@ -202,9 +202,15 @@ export class FinanceService {
 
   balanceFor(userId: UserId): number {
     const deposits = this.totalDepositedBy(userId);
-    const sharedWithdrawalShare = this.totalWithdrawals() / 2;
+    const totalDeposits = this.totalDepositedBy('partner1') + this.totalDepositedBy('partner2');
 
-    return deposits - sharedWithdrawalShare;
+    if (totalDeposits <= 0) {
+      return 0;
+    }
+
+    const withdrawalShare = this.totalWithdrawals() * (deposits / totalDeposits);
+
+    return Math.max(deposits - withdrawalShare, 0);
   }
 
   totalDepositedBy(userId: UserId): number {
