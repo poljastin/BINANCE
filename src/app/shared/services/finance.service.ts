@@ -34,6 +34,11 @@ export class FinanceService {
   private readonly state = signal<AppState>(this.readState());
   private readonly pendingRecurringCount = signal(0);
   private databaseHydrated = false;
+  private readonly refreshFromDatabase = () => {
+    if (document.visibilityState !== 'hidden') {
+      void this.hydrateFromDatabase();
+    }
+  };
 
   readonly transactions = computed(() =>
     [...this.state().transactions].sort(
@@ -104,6 +109,8 @@ export class FinanceService {
 
   constructor(private readonly database: DatabaseService) {
     void this.hydrateFromDatabase();
+    window.addEventListener('focus', this.refreshFromDatabase);
+    document.addEventListener('visibilitychange', this.refreshFromDatabase);
 
     effect(() => {
       const state = this.state();
@@ -375,7 +382,7 @@ export class FinanceService {
     const storedState = await this.database.getFinanceState();
 
     if (storedState) {
-      this.state.set(this.normalizeState(storedState));
+      this.state.set(this.mergeStates(this.normalizeState(storedState), this.state()));
     }
 
     this.databaseHydrated = true;
@@ -408,6 +415,29 @@ export class FinanceService {
       recurringRules: state.recurringRules ?? [],
       lowBalanceThreshold: state.lowBalanceThreshold ?? null,
     };
+  }
+
+  private mergeStates(remote: AppState, local: AppState): AppState {
+    return {
+      transactions: this.mergeById(remote.transactions, local.transactions),
+      goals: this.mergeById(remote.goals, local.goals),
+      recurringRules: local.recurringRules.length ? local.recurringRules : remote.recurringRules,
+      lowBalanceThreshold: local.lowBalanceThreshold ?? remote.lowBalanceThreshold,
+    };
+  }
+
+  private mergeById<T extends Transaction | Goal>(remoteItems: T[], localItems: T[]): T[] {
+    const items = new Map<string, T>();
+
+    for (const item of remoteItems) {
+      items.set(item.id, item);
+    }
+
+    for (const item of localItems) {
+      items.set(item.id, item);
+    }
+
+    return [...items.values()];
   }
 
   private readJson<T>(key: string, fallback: T): T {

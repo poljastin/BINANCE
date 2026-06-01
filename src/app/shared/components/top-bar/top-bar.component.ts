@@ -20,7 +20,6 @@ interface NavigatorWithConnection extends Navigator {
   template: `
     <header class="top-shell">
       <div class="status-bar" aria-hidden="true">
-        <span>{{ time() }}</span>
         <span class="network-icons">
           <svg
             lucideWifi
@@ -76,6 +75,7 @@ interface NavigatorWithConnection extends Navigator {
     }
 
     .status-bar {
+      justify-content: flex-end;
       min-height: 24px;
       color: var(--ink);
       font-size: 0.78rem;
