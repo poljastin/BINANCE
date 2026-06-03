@@ -15,6 +15,7 @@ const TRANSACTIONS_KEY = 'binance_transactions';
 const GOALS_KEY = 'binance_goals';
 const RECURRING_KEY = 'binance_recurring_rules';
 const LOW_BALANCE_KEY = 'binance_low_balance_threshold';
+const RESET_KEY = 'binance_reset_at';
 const CLOUD_REFRESH_INTERVAL_MS = 3000;
 
 const emptyState = (resetAt?: string): AppState => ({
@@ -441,6 +442,7 @@ export class FinanceService {
         LOW_BALANCE_KEY,
         legacy.lowBalanceThreshold ?? null,
       ),
+      resetAt: this.readJson<string | undefined>(RESET_KEY, legacy.resetAt),
     });
   }
 
@@ -498,6 +500,12 @@ export class FinanceService {
     localStorage.setItem(GOALS_KEY, JSON.stringify(state.goals));
     localStorage.setItem(RECURRING_KEY, JSON.stringify(state.recurringRules));
     localStorage.setItem(LOW_BALANCE_KEY, JSON.stringify(state.lowBalanceThreshold));
+
+    if (state.resetAt) {
+      localStorage.setItem(RESET_KEY, JSON.stringify(state.resetAt));
+    } else {
+      localStorage.removeItem(RESET_KEY);
+    }
   }
 
   private isNewerReset(candidate?: string, baseline?: string): boolean {
